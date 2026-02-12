@@ -171,7 +171,7 @@ export default function App() {
               </div>
               <Button size="lg" className="gap-2" onClick={() => setIsCreateGroupOpen(true)}>
                 <Plus className="h-5 w-5" />
-                Create Group
+                Create Group Now
               </Button>
             </div>
 
