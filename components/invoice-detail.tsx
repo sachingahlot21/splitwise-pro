@@ -62,6 +62,18 @@ export function InvoiceDetail({
     return total;
   };
 
+  const handleDraft = () => {
+    const updatedInvoice = {
+      ...invoice,
+      status: 'draft' as const,
+      items: invoice.items.map((item) => ({
+        ...item,
+        splitAmong: itemSplits[item.id] || [],
+      })),
+    };
+    onUpdate(updatedInvoice);
+  }
+
   const handleFinalize = () => {
     const updatedInvoice = {
       ...invoice,
@@ -216,7 +228,7 @@ export function InvoiceDetail({
       {/* Actions */}
       {isEditMode && invoice.status !== 'reviewed' && (
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={handleDraft}>
             Save Draft
           </Button>
           <Button

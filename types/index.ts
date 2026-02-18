@@ -30,7 +30,7 @@ export interface Invoice {
   merchant: string;
   date: Date;
   total: number;
-  status: 'reviewed' | 'needs-review';
+  status: 'reviewed' | 'needs-review' | 'draft';
   imageUrl?: string;
   items: InvoiceItem[];
   uploadedBy: string;

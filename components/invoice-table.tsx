@@ -2,6 +2,18 @@ import { Invoice } from '../types';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import {
   Table,
   TableBody,
   TableCell,
@@ -91,14 +103,53 @@ export function InvoiceTable({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => onEditInvoice(invoice.id)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+
+                  {invoice.status === "reviewed" ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+
+                      <AlertDialogContent className="sm:max-w-md">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Reopen Finalized Invoice?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            ⚠️ Editing a finalized invoice will overwrite previous data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onEditInvoice(invoice.id)}
+                          >
+                            Continue Editing
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEditInvoice(invoice.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+
+
                   <Button
                     variant="ghost"
                     size="icon"

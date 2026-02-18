@@ -49,11 +49,31 @@ export default function App() {
     setCurrentView('invoice-detail');
   };
 
+  // const handleEditInvoice = (invoiceId: string) => {
+  //   setSelectedInvoiceId(invoiceId);
+  //   setInvoiceMode('edit'); 
+  //   setCurrentView('invoice-detail');
+  // };
   const handleEditInvoice = (invoiceId: string) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    // If invoice was finalized → reopen it
+    if (invoice.status === "reviewed") {
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === invoiceId
+            ? { ...inv, status: "draft" }
+            : inv
+        )
+      );
+    }
+
     setSelectedInvoiceId(invoiceId);
-    setInvoiceMode('edit'); 
+    setInvoiceMode('edit');
     setCurrentView('invoice-detail');
   };
+
 
   const handleBackToGroup = () => {
     setCurrentView('group-detail');
@@ -172,6 +192,7 @@ export default function App() {
               <Button size="lg" className="gap-2" onClick={() => setIsCreateGroupOpen(true)}>
                 <Plus className="h-5 w-5" />
                 Create Group Now
+
               </Button>
             </div>
 
@@ -227,7 +248,7 @@ export default function App() {
             groupMembers={selectedGroup.members}
             onBack={handleBackToGroup}
             onUpdate={handleUpdateInvoice}
-            mode={invoiceMode} 
+            mode={invoiceMode}
           />
         )}
       </main>
