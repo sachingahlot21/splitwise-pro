@@ -122,7 +122,7 @@ export function InvoiceTable({
                             Reopen Finalized Invoice?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            ⚠️ Editing a finalized invoice will overwrite previous data.
+                            ⚠️ Editing a finalized invoice will overwrite previous data...
                           </AlertDialogDescription>
                         </AlertDialogHeader>
 
