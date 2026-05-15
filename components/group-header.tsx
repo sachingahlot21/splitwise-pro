@@ -15,9 +15,10 @@ interface GroupHeaderProps {
   onAddMember: () => void;
   onAddInvoice: () => void;
   onViewMembers?: () => void;
+  onViewBalances?: () => void;
 }
 
-export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers }: GroupHeaderProps) {
+export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers, onViewBalances }: GroupHeaderProps) {
   return (
     <div className="bg-card border border-border/40 rounded-xl p-6 mb-6">
       <div className="flex items-start justify-between mb-6">
@@ -37,7 +38,7 @@ export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers }:
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem>Edit group name</DropdownMenuItem>
-            <DropdownMenuItem>View balances</DropdownMenuItem>
+            <DropdownMenuItem onClick={onViewBalances}>View balances</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive">Delete group</DropdownMenuItem>
           </DropdownMenuContent>
