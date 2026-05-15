@@ -9,6 +9,7 @@ import { InvoiceDetail } from './components/invoice-detail';
 import { AddMemberModal } from './components/add-member-modal';
 import { MemberListModal } from './components/member-list-modal';
 import { CreateGroupModal } from './components/create-group-modal';
+import { ViewBalancesModal } from './components/view-balances-modal';
 import { Button } from './components/ui/button';
 import { Plus, Receipt, ArrowLeft } from 'lucide-react';
 import { mockGroups, mockInvoices, mockMembers } from './lib/mock-data';
@@ -26,6 +27,7 @@ export default function App() {
   const [showAddInvoiceModal, setShowAddInvoiceModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showMemberListModal, setShowMemberListModal] = useState(false);
+  const [showBalancesModal, setShowBalancesModal] = useState(false);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [invoiceMode, setInvoiceMode] = useState<'view' | 'edit'>('view');
 
@@ -85,6 +87,7 @@ export default function App() {
     date: string;
     total: number;
     items: any[];
+    whoPaid: string;
   }) => {
     if (!selectedGroupId) return;
 
@@ -98,6 +101,7 @@ export default function App() {
       status: 'needs-review',
       items: invoiceData.items,
       uploadedBy: 'm1',
+      whoPaid: invoiceData.whoPaid,
       createdAt: new Date(),
     };
 
@@ -134,6 +138,38 @@ export default function App() {
   const handleRemoveMember = (memberId: string) => {
     if (!selectedGroupId) return;
 
+    const group = groups.find(g => g.id === selectedGroupId);
+    if (!group) return;
+
+    // Check if member has outstanding balances
+    const groupInvoices = invoices.filter(inv => inv.groupId === selectedGroupId && inv.status === 'reviewed');
+    let hasBalance = false;
+
+    groupInvoices.forEach(invoice => {
+      if (invoice.whoPaid === memberId) {
+        // Check if others owe this member
+        invoice.items.forEach(item => {
+          const participants = item.splitAmong && item.splitAmong.length > 0 ? item.splitAmong : group.members.map(m => m.id);
+          if (participants.includes(memberId)) {
+            hasBalance = true;
+          }
+        });
+      } else {
+        // Check if this member owes someone
+        invoice.items.forEach(item => {
+          const participants = item.splitAmong && item.splitAmong.length > 0 ? item.splitAmong : group.members.map(m => m.id);
+          if (participants.includes(memberId)) {
+            hasBalance = true;
+          }
+        });
+      }
+    });
+
+    if (hasBalance) {
+      alert('Cannot remove member with outstanding balances. Please settle all balances first.');
+      return;
+    }
+
     setGroups(
       groups.map((group) =>
         group.id === selectedGroupId
@@ -144,6 +180,10 @@ export default function App() {
           : group
       )
     );
+  };
+
+  const handleViewBalances = () => {
+    setShowBalancesModal(true);
   };
 
   const selectedGroup = selectedGroupId
@@ -224,6 +264,7 @@ export default function App() {
               onAddMember={() => setShowAddMemberModal(true)}
               onAddInvoice={() => setShowAddInvoiceModal(true)}
               onViewMembers={() => setShowMemberListModal(true)}
+              onViewBalances={handleViewBalances}
             />
 
             <div className="mb-4">
@@ -257,6 +298,7 @@ export default function App() {
         open={showAddInvoiceModal}
         onClose={() => setShowAddInvoiceModal(false)}
         onSave={handleSaveInvoice}
+        groupMembers={selectedGroup?.members || []}
       />
 
       <AddMemberModal
@@ -278,6 +320,15 @@ export default function App() {
           onClose={() => setShowMemberListModal(false)}
           group={selectedGroup}
           onRemoveMember={handleRemoveMember}
+        />
+      )}
+
+      {selectedGroup && (
+        <ViewBalancesModal
+          open={showBalancesModal}
+          onClose={() => setShowBalancesModal(false)}
+          group={selectedGroup}
+          invoices={groupInvoices}
         />
       )}
     </div>

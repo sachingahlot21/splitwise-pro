@@ -87,6 +87,7 @@ export const mockInvoices: Invoice[] = [
       { id: 'i2', name: 'Breakfast buffet', quantity: 6, price: 180.0 },
     ],
     uploadedBy: 'm1',
+    whoPaid: 'm1',
     createdAt: new Date('2026-01-16'),
   },
   {
@@ -105,6 +106,7 @@ export const mockInvoices: Invoice[] = [
       { id: 'i7', name: 'Tax & Tip', quantity: 1, price: 18.35 },
     ],
     uploadedBy: 'm2',
+    whoPaid: 'm2',
     createdAt: new Date('2026-01-17'),
   },
   {
@@ -117,6 +119,7 @@ export const mockInvoices: Invoice[] = [
     status: 'reviewed',
     items: [{ id: 'i8', name: 'Orchestra seats', quantity: 3, price: 240.0 }],
     uploadedBy: 'm1',
+    whoPaid: 'm1',
     createdAt: new Date('2026-01-18'),
   },
   {
@@ -134,6 +137,7 @@ export const mockInvoices: Invoice[] = [
       { id: 'i12', name: 'Tax & Tip', quantity: 1, price: 10.8 },
     ],
     uploadedBy: 'm1',
+    whoPaid: 'm1',
     createdAt: new Date('2026-01-21'),
   },
 ];

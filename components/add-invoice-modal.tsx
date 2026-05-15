@@ -5,29 +5,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Upload, FileImage, FileText, Camera, Loader2, Plus, Trash2 } from 'lucide-react';
-import { InvoiceItem } from '../types';
+import { InvoiceItem, Member } from '../types';
 
 interface AddInvoiceModalProps {
   open: boolean;
   onClose: () => void;
+  groupMembers: Member[];
   onSave: (invoiceData: {
     merchant: string;
     date: string;
     total: number;
     items: InvoiceItem[];
+    whoPaid: string;
   }) => void;
 }
 
 type UploadState = 'idle' | 'uploading' | 'processing' | 'extracted';
 
-export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps) {
+export function AddInvoiceModal({ open, onClose, onSave, groupMembers }: AddInvoiceModalProps) {
   const [merchant, setMerchant] = useState('');
   const [date, setDate] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [manualEntry, setManualEntry] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [dragActive, setDragActive] = useState(false);
+  const [whoPaid, setWhoPaid] = useState('');
 
   const handleStartManualEntry = () => {
     setManualEntry(true);
@@ -63,6 +67,7 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
     setTimeout(() => {
       setMerchant('Whole Foods Market');
       setDate(new Date().toISOString().split('T')[0]);
+      setWhoPaid(groupMembers[0]?.id || '');
       setItems([
         {
           id: `item-${Date.now()}-1`,
@@ -149,7 +154,7 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
 
   const handleSave = () => {
     const total = calculateTotal();
-    onSave({ merchant, date, total, items });
+    onSave({ merchant, date, total, items, whoPaid });
     handleClose();
   };
 
@@ -160,6 +165,7 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
     setManualEntry(false);
     setUploadState('idle');
     setDragActive(false);
+    setWhoPaid('');
     onClose();
   };
 
@@ -191,6 +197,21 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="whoPaid">Paid By</Label>
+                  <Select value={whoPaid} onValueChange={setWhoPaid}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select who paid" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groupMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -365,7 +386,7 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
                 <p>✓ Invoice data extracted successfully. Please review and edit if needed.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="merchant">Merchant Name</Label>
                   <Input
@@ -383,6 +404,21 @@ export function AddInvoiceModal({ open, onClose, onSave }: AddInvoiceModalProps)
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="whoPaid">Paid By</Label>
+                  <Select value={whoPaid} onValueChange={setWhoPaid}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select who paid" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groupMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

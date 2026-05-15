@@ -34,10 +34,13 @@ export interface Invoice {
   imageUrl?: string;
   items: InvoiceItem[];
   uploadedBy: string;
+  whoPaid: string; // member ID of who paid the bill
   createdAt: Date;
 }
+
 
 export interface Balance {
   memberId: string;
   amount: number; // positive = owed to them, negative = they owe
 }
+

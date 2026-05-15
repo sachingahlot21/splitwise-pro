@@ -3,6 +3,13 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -40,6 +47,7 @@ export function InvoiceDetail({
       {}
     )
   );
+  const [whoPaid, setWhoPaid] = useState<string>(invoice.whoPaid || '');
 
   const toggleMemberForItem = (itemId: string, memberId: string) => {
     setItemSplits((prev) => {
@@ -66,6 +74,7 @@ export function InvoiceDetail({
     const updatedInvoice = {
       ...invoice,
       status: 'draft' as const,
+      whoPaid,
       items: invoice.items.map((item) => ({
         ...item,
         splitAmong: itemSplits[item.id] || [],
@@ -78,6 +87,7 @@ export function InvoiceDetail({
     const updatedInvoice = {
       ...invoice,
       status: 'reviewed' as const,
+      whoPaid,
       items: invoice.items.map((item) => ({
         ...item,
         splitAmong: itemSplits[item.id] || [],
@@ -114,6 +124,27 @@ export function InvoiceDetail({
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 ${invoice.total.toFixed(2)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Paid by:</span>
+                {isViewMode ? (
+                  <span className="text-sm">
+                    {groupMembers.find(m => m.id === invoice.whoPaid)?.name || 'Not specified'}
+                  </span>
+                ) : (
+                  <Select value={whoPaid} onValueChange={setWhoPaid}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Select payer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groupMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </div>
