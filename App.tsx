@@ -1,6 +1,6 @@
-'use client';
+ 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GroupCard } from './components/group-card';
 import { GroupHeader } from './components/group-header';
 import { InvoiceTable } from './components/invoice-table';
@@ -12,7 +12,10 @@ import { CreateGroupModal } from './components/create-group-modal';
 import { ViewBalancesModal } from './components/view-balances-modal';
 import { Button } from './components/ui/button';
 import { Plus, Receipt, ArrowLeft } from 'lucide-react';
-import { mockGroups, mockInvoices, mockMembers } from './lib/mock-data';
+import { mockGroups, mockInvoices } from './lib/mock-data';
+import { api } from './lib/client/api';
+import { LoginScreen } from './components/login-screen';
+import { useAuth } from './context/AuthContext';
 import { Invoice, Group, Member } from './types';
 
 
@@ -24,6 +27,7 @@ export default function App() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>(mockGroups);
   const [invoices, setInvoices] = useState(mockInvoices);
+  const { token, user, loading, logout } = useAuth();
   const [showAddInvoiceModal, setShowAddInvoiceModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showMemberListModal, setShowMemberListModal] = useState(false);
@@ -37,7 +41,11 @@ export default function App() {
   };
 
   const handleCreateGroup = (group: Group) => {
-    setGroups((prev) => [group, ...prev]);
+    if (!token) return;
+
+    api.createGroup({ name: group.name, members: group.members.map((m) => ({ name: m.name, email: m.email, avatar: m.avatar, color: m.color })) }, token)
+      .then((g: any) => setGroups((prev) => [g, ...prev]))
+      .catch(() => setGroups((prev) => [group, ...prev]));
   };
 
   const handleBackToDashboard = () => {
@@ -82,6 +90,18 @@ export default function App() {
     setSelectedInvoiceId(null);
   };
 
+  useEffect(() => {
+    if (!token) return;
+
+    api.getGroups(token)
+      .then((data: any) => { if (Array.isArray(data)) setGroups(data); })
+      .catch(() => setGroups(mockGroups));
+
+    api.getInvoices(undefined, token)
+      .then((data: any) => { if (Array.isArray(data)) setInvoices(data); })
+      .catch(() => setInvoices(mockInvoices));
+  }, [token]);
+
   const handleSaveInvoice = (invoiceData: {
     merchant: string;
     date: string;
@@ -89,50 +109,52 @@ export default function App() {
     items: any[];
     whoPaid: string;
   }) => {
-    if (!selectedGroupId) return;
+    if (!selectedGroupId || !token) return;
 
-    const newInvoice: Invoice = {
-      id: `inv-${Date.now()}`,
-      groupId: selectedGroupId,
-      name: `Invoice from ${invoiceData.merchant}`,
-      merchant: invoiceData.merchant,
-      date: new Date(invoiceData.date),
-      total: invoiceData.total,
-      status: 'needs-review',
-      items: invoiceData.items,
-      uploadedBy: 'm1',
-      whoPaid: invoiceData.whoPaid,
-      createdAt: new Date(),
-    };
-
-    setInvoices([...invoices, newInvoice]);
+    api.createInvoice({ groupId: selectedGroupId, merchant: invoiceData.merchant, date: invoiceData.date, total: invoiceData.total, items: invoiceData.items, whoPaid: invoiceData.whoPaid }, token)
+      .then((inv: any) => setInvoices((prev) => [...prev, inv]))
+      .catch(() => {
+        const newInvoice: Invoice = {
+          id: `inv-${Date.now()}`,
+          groupId: selectedGroupId,
+          name: `Invoice from ${invoiceData.merchant}`,
+          merchant: invoiceData.merchant,
+          date: new Date(invoiceData.date),
+          total: invoiceData.total,
+          status: 'needs-review',
+          items: invoiceData.items,
+          uploadedBy: 'm1',
+          whoPaid: invoiceData.whoPaid,
+          createdAt: new Date(),
+        };
+        setInvoices((prev) => [...prev, newInvoice]);
+      });
   };
 
   const handleUpdateInvoice = (updatedInvoice: Invoice) => {
-    setInvoices(
-      invoices.map((inv) =>
-        inv.id === updatedInvoice.id ? updatedInvoice : inv
-      )
-    );
+    if (!token) return;
+
+    api.updateInvoice(updatedInvoice.id, updatedInvoice, token)
+      .then((inv: any) => {
+        setInvoices(invoices.map((i) => (i.id === inv.id ? inv : i)));
+      })
+      .catch(() => setInvoices(invoices.map((inv) => (inv.id === updatedInvoice.id ? updatedInvoice : inv))));
     setCurrentView('group-detail');
     setSelectedInvoiceId(null);
   };
 
   const handleAddMember = (memberData: Omit<Member, 'id'>) => {
-    if (!selectedGroupId) return;
+    if (!selectedGroupId || !token) return;
 
-    const newMember: Member = {
-      id: `m-${Date.now()}`,
-      ...memberData,
-    };
+    const newMember: Member = { id: `m-${Date.now()}`, ...memberData };
 
-    setGroups(
-      groups.map((group) =>
-        group.id === selectedGroupId
-          ? { ...group, members: [...group.members, newMember] }
-          : group
-      )
-    );
+    api.addMember(selectedGroupId, memberData, token)
+      .then((m: any) => {
+        setGroups(groups.map((group) => group.id === selectedGroupId ? { ...group, members: [...group.members, m] } : group));
+      })
+      .catch(() => {
+        setGroups(groups.map((group) => group.id === selectedGroupId ? { ...group, members: [...group.members, newMember] } : group));
+      });
   };
 
   const handleRemoveMember = (memberId: string) => {
@@ -170,16 +192,11 @@ export default function App() {
       return;
     }
 
-    setGroups(
-      groups.map((group) =>
-        group.id === selectedGroupId
-          ? {
-            ...group,
-            members: group.members.filter((m) => m.id !== memberId),
-          }
-          : group
-      )
-    );
+    if (!token) return;
+
+    api.removeMember(selectedGroupId, memberId, token)
+      .then(() => setGroups(groups.map((group) => group.id === selectedGroupId ? { ...group, members: group.members.filter((m) => m.id !== memberId) } : group)))
+      .catch(() => setGroups(groups.map((group) => group.id === selectedGroupId ? { ...group, members: group.members.filter((m) => m.id !== memberId) } : group)));
   };
 
   const handleViewBalances = () => {
@@ -198,6 +215,18 @@ export default function App() {
     ? invoices.find((inv) => inv.id === selectedInvoiceId)
     : null;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+        Checking authentication...
+      </div>
+    );
+  }
+
+  if (!token || !user) {
+    return <LoginScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -214,6 +243,8 @@ export default function App() {
             <Button variant="ghost" size="sm">
               Settings
             </Button>
+            <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
+            <Button onClick={() => { logout(); }} size="sm">Logout</Button>
           </div>
         </div>
       </header>
@@ -261,10 +292,8 @@ export default function App() {
 
             <GroupHeader
               group={selectedGroup}
-              onAddMember={() => setShowAddMemberModal(true)}
-              onAddInvoice={() => setShowAddInvoiceModal(true)}
-              onViewMembers={() => setShowMemberListModal(true)}
-              onViewBalances={handleViewBalances}
+                onAddMember={() => setShowAddMemberModal(true)}
+                onAddInvoice={() => setShowAddInvoiceModal(true)}
             />
 
             <div className="mb-4">
@@ -278,7 +307,10 @@ export default function App() {
               invoices={groupInvoices}
               onViewInvoice={handleViewInvoice}
               onEditInvoice={handleEditInvoice}
-              onDeleteInvoice={(id) => setInvoices(invoices.filter((inv) => inv.id !== id))}
+              onDeleteInvoice={(id) => {
+                if (!token) return;
+                api.deleteInvoice(id, token).then(() => setInvoices(invoices.filter((inv) => inv.id !== id))).catch(() => setInvoices(invoices.filter((inv) => inv.id !== id)));
+              }}
             />
           </div>
         )}
