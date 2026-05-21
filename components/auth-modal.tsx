@@ -34,7 +34,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         onClose();
       }
     } catch (err: any) {
-      setError(err?.message || 'Auth failed! Try again.');
+      setError(err?.message || 'Auth failed!');
     } finally {
       setLoading(false);
     }
