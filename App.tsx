@@ -294,6 +294,8 @@ export default function App() {
               group={selectedGroup}
                 onAddMember={() => setShowAddMemberModal(true)}
                 onAddInvoice={() => setShowAddInvoiceModal(true)}
+                onViewBalances={handleViewBalances}
+                invoices={groupInvoices}
             />
 
             <div className="mb-4">

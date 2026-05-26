@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
 import { Plus, Settings, Users } from 'lucide-react';
-import { Group } from '../types';
+import { Group, Invoice } from '../types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +16,10 @@ interface GroupHeaderProps {
   onAddInvoice: () => void;
   onViewMembers?: () => void;
   onViewBalances?: () => void;
+  invoices?: Invoice[];
 }
 
-export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers, onViewBalances }: GroupHeaderProps) {
+export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers, onViewBalances, invoices }: GroupHeaderProps) {
   return (
     <div className="bg-card border border-border/40 rounded-xl p-6 mb-6">
       <div className="flex items-start justify-between mb-6">
@@ -26,7 +27,10 @@ export function GroupHeader({ group, onAddMember, onAddInvoice, onViewMembers, o
           <h2 className="text-3xl mb-2">{group.name}</h2>
           <div className="text-muted-foreground">
             {group.members.length} member{group.members.length !== 1 ? 's' : ''} · Total: $
-            {group.totalExpense.toFixed(2)}
+            {(invoices && invoices.length > 0
+              ? invoices.reduce((sum, inv) => sum + (typeof inv.total === 'number' ? inv.total : Number(inv.total) || 0), 0)
+              : group.totalExpense
+            ).toFixed(2)}
           </div>
         </div>
 
