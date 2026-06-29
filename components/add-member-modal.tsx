@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -12,6 +12,10 @@ interface AddMemberModalProps {
   onClose: () => void;
   onAdd: (member: Omit<Member, 'id'>) => void;
   existingMembers: Member[];
+}
+interface EditMemberPayload {
+  id: string;
+  data: Omit<Member, 'id'>;
 }
 
 const MEMBER_COLORS = [
@@ -35,6 +39,25 @@ export function AddMemberModal({
 }: AddMemberModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // note: this component now supports a simple edit flow by listening
+  // for a custom event `open-edit-member` dispatched on window with payload { id, name, email }
+  // The parent can dispatch this event to prefill and enter edit mode.
+  // This keeps parent changes minimal while enabling edit UX.
+  
+  // Setup listener once using useEffect
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e?.detail;
+      if (!detail) return;
+      setEditingId(detail.id || null);
+      setName(detail.name || '');
+      setEmail(detail.email || '');
+    };
+    window.addEventListener('open-edit-member', handler as EventListener);
+    return () => window.removeEventListener('open-edit-member', handler as EventListener);
+  }, []);
 
   const getNextColor = () => {
     const usedColors = existingMembers.map((m) => m.color);
@@ -55,15 +78,23 @@ export function AddMemberModal({
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
 
-    onAdd({
+    const payload = {
       name: name.trim(),
       email: email.trim(),
       avatar: getInitials(name),
       color: getNextColor(),
-    });
+    };
+
+    if (editingId) {
+      const evt = new CustomEvent('edit-member-saved', { detail: { id: editingId, data: payload } });
+      window.dispatchEvent(evt);
+    } else {
+      onAdd(payload);
+    }
 
     setName('');
     setEmail('');
+    setEditingId(null);
     onClose();
   };
 
@@ -108,7 +139,7 @@ export function AddMemberModal({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Member</Button>
+            <Button type="submit">{editingId ? 'Save' : 'Add Member'}</Button>
           </div>
         </form>
       </DialogContent>

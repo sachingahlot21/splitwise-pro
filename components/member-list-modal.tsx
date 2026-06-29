@@ -11,13 +11,14 @@ import {
   TableRow,
 } from './ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { Mail, Trash2 } from 'lucide-react';
+import { Mail, Trash2, Edit3 } from 'lucide-react';
 
 interface MemberListModalProps {
   open: boolean;
   onClose: () => void;
   group: Group;
   onRemoveMember: (memberId: string) => void;
+  onEditMember?: (member: Member) => void;
 }
 
 export function MemberListModal({
@@ -25,6 +26,7 @@ export function MemberListModal({
   onClose,
   group,
   onRemoveMember,
+  onEditMember,
 }: MemberListModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -72,16 +74,26 @@ export function MemberListModal({
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    {group.members.length > 1 && (
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => onRemoveMember(member.id)}
+                        onClick={() => onEditMember && onEditMember(member)}
+                        title="Edit"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit3 className="h-4 w-4" />
                       </Button>
-                    )}
+                      {group.members.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => onRemoveMember(member.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

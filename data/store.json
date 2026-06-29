@@ -27,7 +27,7 @@
         }
       ],
       "totalExpense": 56.39,
-      "pendingBalance": 0,
+      "pendingBalance": 50.39,
       "createdAt": "2026-05-26T02:48:04.717Z"
     },
     {
@@ -317,31 +317,44 @@
       "merchant": "ASDA",
       "date": "2026-05-26T00:00:00.000Z",
       "total": 56.39,
-      "status": "needs-review",
+      "status": "reviewed",
       "items": [
         {
           "id": "item-1779763688722",
           "name": "FROZEN VEG",
           "quantity": 1,
-          "price": 12
+          "price": 12,
+          "splitAmong": [
+            "m-1779763684717-0",
+            "m-1779763684717-1"
+          ]
         },
         {
           "id": "item-1779763710948",
           "name": "TOMO",
           "quantity": 1,
-          "price": 1.79
+          "price": 1.79,
+          "splitAmong": [
+            "m-1779763684717-1"
+          ]
         },
         {
           "id": "item-1779763759202",
           "name": "EGGS",
           "quantity": 4,
-          "price": 4.65
+          "price": 4.65,
+          "splitAmong": [
+            "m-1779763684717-1"
+          ]
         },
         {
           "id": "item-1779763779265",
           "name": "APPLE",
           "quantity": 2,
-          "price": 12
+          "price": 12,
+          "splitAmong": [
+            "m-1779763684717-2"
+          ]
         }
       ],
       "uploadedBy": "m1",

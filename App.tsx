@@ -9,6 +9,7 @@ import { InvoiceDetail } from './components/invoice-detail';
 import { AddMemberModal } from './components/add-member-modal';
 import { MemberListModal } from './components/member-list-modal';
 import { CreateGroupModal } from './components/create-group-modal';
+import { EditGroupModal } from './components/edit-group-modal';
 import { ViewBalancesModal } from './components/view-balances-modal';
 import { Button } from './components/ui/button';
 import { Plus, Receipt, ArrowLeft } from 'lucide-react';
@@ -32,6 +33,8 @@ export default function App() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showMemberListModal, setShowMemberListModal] = useState(false);
   const [showBalancesModal, setShowBalancesModal] = useState(false);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [editingGroupName, setEditingGroupName] = useState('');
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [invoiceMode, setInvoiceMode] = useState<'view' | 'edit'>('view');
 
@@ -199,8 +202,63 @@ export default function App() {
       .catch(() => setGroups(groups.map((group) => group.id === selectedGroupId ? { ...group, members: group.members.filter((m) => m.id !== memberId) } : group)));
   };
 
+  const handleOpenEditMember = (member: Member) => {
+    // close member list and open add-member modal in edit mode
+    setShowMemberListModal(false);
+    setShowAddMemberModal(true);
+    // dispatch event for AddMemberModal to prefill fields
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-edit-member', { detail: { id: member.id, name: member.name, email: member.email } }));
+    }, 0);
+  };
+
+  // Listen for save event from AddMemberModal when editing
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e?.detail;
+      if (!detail) return;
+      const { id, data } = detail as { id: string; data: Omit<Member, 'id'> };
+      if (!selectedGroupId) return;
+      setGroups((prev) => prev.map((g) => {
+        if (g.id !== selectedGroupId) return g;
+        const updatedMembers = g.members.map((m) => m.id === id ? { id, ...data } : m);
+        return { ...g, members: updatedMembers };
+      }));
+
+      // persist to API if token present
+      if (token) {
+        const group = groups.find((g) => g.id === selectedGroupId);
+        if (group) {
+          const updatedMembers = group.members.map((m) => m.id === id ? { id, ...data } : m);
+          api.updateGroup(selectedGroupId, { members: updatedMembers }, token).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('edit-member-saved', handler as EventListener);
+    return () => window.removeEventListener('edit-member-saved', handler as EventListener);
+  }, [selectedGroupId, token, groups]);
+
   const handleViewBalances = () => {
     setShowBalancesModal(true);
+  };
+
+  const handleOpenEditGroupName = () => {
+    const group = selectedGroupId ? groups.find((g) => g.id === selectedGroupId) : null;
+    if (!group) return;
+    setEditingGroupName(group.name);
+    setShowEditGroupModal(true);
+  };
+
+  const handleSaveGroupName = (newName: string) => {
+    if (!selectedGroupId) return;
+    setGroups((prev) =>
+      prev.map((g) => (g.id === selectedGroupId ? { ...g, name: newName } : g))
+    );
+
+    if (!token) return;
+    api.updateGroup(selectedGroupId, { name: newName }, token).catch(() => {
+      // keep optimistic local state on failure
+    });
   };
 
   const selectedGroup = selectedGroupId
@@ -292,10 +350,12 @@ export default function App() {
 
             <GroupHeader
               group={selectedGroup}
-                onAddMember={() => setShowAddMemberModal(true)}
-                onAddInvoice={() => setShowAddInvoiceModal(true)}
-                onViewBalances={handleViewBalances}
-                invoices={groupInvoices}
+              onAddMember={() => setShowAddMemberModal(true)}
+              onAddInvoice={() => setShowAddInvoiceModal(true)}
+              onViewBalances={handleViewBalances}
+              onEditGroupName={handleOpenEditGroupName}
+              invoices={groupInvoices}
+              onViewMembers={() => setShowMemberListModal(true)}
             />
 
             <div className="mb-4">
@@ -348,12 +408,20 @@ export default function App() {
         onCreate={handleCreateGroup}
       />
 
+      <EditGroupModal
+        open={showEditGroupModal}
+        value={editingGroupName}
+        onClose={() => setShowEditGroupModal(false)}
+        onSave={handleSaveGroupName}
+      />
+
       {selectedGroup && (
         <MemberListModal
           open={showMemberListModal}
           onClose={() => setShowMemberListModal(false)}
           group={selectedGroup}
           onRemoveMember={handleRemoveMember}
+          onEditMember={handleOpenEditMember}
         />
       )}
 
